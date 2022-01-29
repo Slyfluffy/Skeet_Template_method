@@ -47,6 +47,7 @@ Bullet::Bullet(double angle, double speed, double radius, int value) :
    v.setDy(speed * sin(angle));
    assert(v.getDx() <= 0.0);
    assert(v.getDy() >= 0.0);
+    
 }
 
 /*********************************************
@@ -59,71 +60,61 @@ void Bomb::death(std::list<Bullet*>& bullets)
       bullets.push_back(new Shrapnel(*this));
 }
 
- /***************************************************************/
- /***************************************************************/
- /*                             MOVE                            */
- /***************************************************************/
- /***************************************************************/
 
-/*********************************************
- * BULLET MOVE
- * Move the bullet along by one time period
- *********************************************/
-void Bullet::move(std::list<Effect*> & effects)
+void Bomb::stepToDeath()
 {
-   // inertia
-   pt.add(v);
+   if (!timeToDie)
+       kill();
+   
+};
 
-   // out of bounds checker
-   if (isOutOfBounds())
-      kill();
+void Shrapnel::stepToDeath()
+{
+   if (!timeToDie)
+       kill();
+   
+};
+
+
+void Bullet::BulletMove::move(std::list<Effect*> &effects)
+{
+    loseLife();
+    addEffects(effects);
+    moveBullet();
 }
 
-/*********************************************
- * BOMB MOVE
- * Move the bomb along by one time period
- *********************************************/
-void Bomb::move(std::list<Effect*> & effects)
+void Bullet::BulletMove::moveBullet()
 {
-    // kill if it has been around too long
-    timeToDie--;
-    if (!timeToDie)
-        kill();
-
-    // do the inertia thing
-    Bullet::move(effects);
-}
-
-/*********************************************
- * MISSILE MOVE
- * Move the missile along by one time period
- *********************************************/
-void Missile::move(std::list<Effect*> & effects)
-{
-    // kill if it has been around too long
-   effects.push_back(new Exhaust(pt, v));
-
-    // do the inertia thing
-    Bullet::move(effects);
-}
-
-/*********************************************
- * SHRAPNEL MOVE
- * Move the shrapnel along by one time period
- *********************************************/
-void Shrapnel::move(std::list<Effect*> & effects)
-{
-    // kill if it has been around too long
-    timeToDie--;
-    if (!timeToDie)
-        kill();
-
-    // add a streek
-    effects.push_back(new Streek(pt, v));
+    bullet.adjustPosition();
     
-    // do the usual bullet stuff (like inertia)
-    Bullet::move(effects);
+    // out of bounds checker
+    if (bullet.isOutOfBounds())
+      bullet.kill();
 }
+
+void Bullet::MissileMove::addEffects(std::list<Effect*> &effects)
+{
+    effects.push_back(new Exhaust(bullet.getPosition(), bullet.getVelocity()));
+}
+
+void Bullet::BombMove::loseLife()
+{
+    bullet.stepToDeath();
+}
+
+void Bullet::ShrapnelMove::loseLife()
+{
+    bullet.stepToDeath();
+}
+
+void Bullet::ShrapnelMove::addEffects(std::list<Effect*> &effects)
+{
+    effects.push_back(new Exhaust(bullet.getPosition(), bullet.getVelocity()));
+}
+
+
+
+
 
 /***************************************************************/
 /***************************************************************/
